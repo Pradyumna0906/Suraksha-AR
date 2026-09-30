@@ -1,0 +1,26 @@
+{
+  "appId": "in.gov.jharkhand.surakshaar",
+  "appName": "RAKSHA 360",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "hardwareAcceleration": true
+  },
+  "plugins": {
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#fffaf4"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#fffaf4",
+      "showSpinner": true,
+      "spinnerColor": "#c64b2d"
+    }
+  }
+}

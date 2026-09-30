@@ -1,59 +1,44 @@
-# ⛏️ खनन सुरक्षा साथी (Khanan Suraksha Sathi) v2.2
-## SIH 26041: AR-Based Vocational Training Simulator for Industrial Safety in Jharkhand's Mining & Manufacturing Sector
+# SurakshaAR
 
-**Theme**: Smart Automation | **Department**: Higher & Technical Education, Govt. of Jharkhand  
-**Compliance Authority**: DGMS Dhanbad (HQ), Mines Act 1952 (Form B / Rule 29B), Coal Mines Regulations 2017 (Reg. 191)
+SurakshaAR is a camera-backed 3D industrial-safety training prototype for mid-range Android phones and modern browsers. It supports practice scenarios for fire response, gas and confined-space awareness, and machinery lockout/tagout concepts.
 
----
+## What this prototype currently does
 
-## 📖 Overview
+- Shows Three.js 3D training scenes over an optional phone-camera feed.
+- Provides local, browser-based practice flows and a temporary written knowledge check.
+- Stores demonstration training records only on the current device using local storage and Capacitor Preferences.
+- Produces a QR code that looks up a local demo record on the same device.
+- Offers Hindi, English, and Santali interface text. Browser speech depends on device voice support; native Santali speech is not guaranteed.
+- Includes demonstration-only site views, gas-plume visuals, a pre-shift practice demo, and a local keyword-matched training reference.
 
-Jharkhand accounts for over 25% of India's mineral output, employing hundreds of thousands of workers—many of whom are young tribal recruits (Santhali, Munda, Ho, Oraon) and contract laborers with low literacy where static manuals yield $<20\%$ retention.
+## Important limitations
 
-**Khanan Suraksha Sathi** is a mobile-first browser training application for practicing industrial safety drills. The current build has five interactive 3D drills, camera-assisted overlays, Hindi/Santhali interface support, a FastAPI/SQLite training service, and a service-worker shell for repeat visits offline.
+- This is **not ARCore or spatial AR**. It does not recognise rooms, surfaces, PPE, workers, hazards, machinery, or gases.
+- Every gas, thermal, ventilation, fatigue, map, and site value shown in the prototype is simulated.
+- It has no backend, no shared database, no cross-device verification, no cryptographic signing, and no live telemetry connection.
+- A training record is **not** a statutory certificate, government credential, compliance result, medical assessment, work-clearance decision, or emergency dispatch.
+- The SOS and reference-card screens are practice aids only. In a real emergency, follow the current site procedure and contact authorised emergency services or a qualified supervisor.
 
-> **Deployment and safety status:** This repository is a training demonstrator, not an approved DGMS certification or operational mine system. Camera mode composites 3D instruction over the live camera image; it does not perform world tracking, persistent surface anchoring, or spatial mapping. No signed Android APK or Unity/ARCore client is included. Backend telemetry is simulated. Do not use it as a substitute for site induction, approved procedures, competent supervision, or certified equipment.
+## Stack
 
----
+- React + Vite + Tailwind CSS
+- Three.js for camera-backed 3D scenes
+- Capacitor for Android packaging and local preferences
+- jsPDF and `qrcode` for prototype exports and local demo-record QR codes
 
-## 🚀 Quick Start
+## Run locally
 
-### 1. Requirements
-- Python 3.9+ installed
-- Dependencies: `pip install fastapi uvicorn qrcode pillow pydantic`
-
-### 2. Launch
-Double click `run.bat` or run:
 ```bash
-python start.py
+npm install
+npm run dev
 ```
-Open **[http://127.0.0.1:8000](http://127.0.0.1:8000)** in your browser. Camera permission is available on localhost; a phone accessing a hosted deployment needs HTTPS. Install the site from a supported mobile browser after its first online load. The app shell and successfully fetched libraries can then be cached for repeat offline use; API-backed worker accounts, dashboards, verification, and certificate issuance still require the server.
 
----
+Open the local address printed by Vite. Camera access is optional; if it is unavailable, the 3D fallback scene remains usable.
 
-## 🎯 Key Features & Modules
+## Android packaging
 
-1. **5 DGMS Vocational Hazard Drills**:
-   - **Roof Strata & Sounding**: Acoustic testing, loose rock crack mapping, 3D roof bolt installation.
-   - **Multi-Gas & Methane**: Roof/mid/floor sampling ($CH_4, CO, O_2, H_2S$), $1.25\%$ electrical power cutoff, brattice curtain airflow.
-   - **Conveyor LOTO Protocol**: 6-step lockout/tagout sequence (switch, hasp, lock, danger tag, zero-energy test).
-   - **100T Dumper Blind Spot**: 360° HEMM proximity visualizer & DGMS horn code verification (1=start, 2=forward, 3=reverse).
-   - **SCSR 60s Escape Drill**: 60-second emergency escape drill under simulated smoke with heart-rate BPM and oxygen starter pin.
-2. **Camera-assisted training view**:
-   - Uses the rear camera where available, displays 3D training models over the live feed, and clearly labels that this is an overlay without world tracking. The 3D sandbox remains available when camera access is unavailable.
-3. **Suraksha Sathi Multilingual Voice Assistant**:
-   - Speech synthesis & voice recognition in **Hindi, Santhali, Mundari, Bengali, and English**.
-   - One-click **"🔊 Listen / ऑडियो सुनें"** audio trigger on every training step.
-4. **Training record and QR demo**:
-   - Server-generated QR training records and a scanner workflow. Cryptographic hashes in this demo are not a government trust chain or independent certification authority.
-5. **Pithead Gate Inspector Scanner**:
-   - Live camera QR scanning with instant access decision:
-     - ✅ Verified Competent
-     - ⚠️ `<30 Days` High-Risk Protocol (Mandatory Buddy Miner)
-     - ❌ Access Denied
-6. **DGMS Dhanbad Command Center**:
-   - Live simulated IoT SCADA gas telemetry grid and district readiness ranking.
+The repository includes a Capacitor Android project. It has not been verified as a production APK in this Phase 1 prototype cleanup. Before any deployment, validate permissions, device behaviour, site procedures, language quality, accessibility, and all operational safeguards with the appropriate experts.
 
-### Offline use
+## Next scope
 
-After one successful online visit, the service worker caches the application shell and resources fetched by the browser. If the API is unavailable, the learner can complete local practice drills; those entries are stored on that browser only and are not official results or certificates. Reconnect to the backend to use registered worker accounts and server records.
+Phase 2 should introduce a reviewed Scenario/Competency Engine. It must define measurable scenario criteria, evidence capture, assessor review, retry policy, and a deliberately designed record model before any certification or compliance claim is considered.
