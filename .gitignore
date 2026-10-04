@@ -1,0 +1,8 @@
+# Local launch and operating-system files
+.DS_Store
+Thumbs.db
+
+# Project runtime data (each app also has its own .gitignore)
+*.db
+*.sqlite
+*.sqlite3

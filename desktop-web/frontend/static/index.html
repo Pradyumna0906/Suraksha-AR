@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#10251d">
+  <meta name="description" content="Offline-capable mobile safety drills with camera-assisted AR overlays for mining and manufacturing workers in Jharkhand.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/mining-safety.svg" type="image/svg+xml">
+  <title>खनन सुरक्षा साथी | AR Industrial Safety Simulator for Jharkhand Mining (SIH26041)</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              gold: '#d97706',
+              green: '#059669',
+              cyan: '#0891b2',
+              surface: '#ffffff'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Three.js CDN for 3D & WebAR -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- HTML5 QR Code Scanner Library for Browser Camera Scanning -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="./css/styles.css?v=38">
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-amber-500 selection:text-white">
+
+  <!-- Top Navigation & Jharkhand Government Header -->
+  <header class="app-header bg-white/90 border-b border-slate-200/90 backdrop-blur-xl sticky top-0 z-50 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Emblems -->
+      <div class="flex items-center gap-3.5">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 p-0.5 shadow-lg shadow-amber-500/25 flex items-center justify-center">
+          <div class="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-2xl">
+            ⛏️
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-extrabold text-amber-700 tracking-widest font-tech uppercase">Govt. of Jharkhand</span>
+            <span class="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-300 rounded-full font-bold font-tech flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> FIELD TRAINING SYSTEM
+            </span>
+          </div>
+          <h1 class="text-lg sm:text-xl font-heading font-extrabold text-slate-900 tracking-tight flex items-center gap-2" data-i18n="appTitle">
+            खनन सुरक्षा साथी <span class="text-xs font-normal text-amber-700 font-tech px-2 py-0.5 bg-amber-100/80 border border-amber-300 rounded-lg">SIH-26041</span>
+          </h1>
+        </div>
+      </div>
+
+      <!-- Live Simulated IoT Gas Advisory Ticker -->
+      <div id="safetyAdvisoryTicker" class="hidden lg:flex items-center bg-amber-50/90 px-4 py-1.5 rounded-full border border-amber-200 max-w-xl overflow-hidden shadow-inner">
+        <div class="flex items-center gap-2 text-xs text-amber-900">
+          <span class="px-2 py-0.5 bg-emerald-600 text-white rounded-full font-bold text-[10px] font-tech animate-pulse">LIVE SCADA</span>
+          <span class="truncate font-medium">Moonidih Underground Coal Mine: CH₄ 0.95% | CO 8 ppm | O₂ 20.4%</span>
+        </div>
+      </div>
+
+      <!-- Controls: Worker Profile & Vernacular Language -->
+      <div class="flex items-center gap-3">
+        <!-- Language Selector -->
+        <div class="flex items-center bg-slate-100 rounded-2xl px-3 py-1.5 border border-slate-200 shadow-sm">
+          <i data-lucide="globe" class="w-4 h-4 text-amber-600 mr-2"></i>
+          <select id="langSelector" class="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer">
+            <option value="hindi">हिंदी (Hindi)</option>
+            <option value="santhali">ᱥᱟᱱᱛᱟᱲᱤ (Santhali)</option>
+            <option value="mundari">मुंडारी (Mundari)</option>
+            <option value="bengali">বাংলা (Bengali)</option>
+            <option value="english">English</option>
+          </select>
+        </div>
+
+        <!-- Worker Selector Dropdown -->
+        <div class="flex items-center bg-slate-100 rounded-2xl px-3 py-1.5 border border-slate-200 shadow-sm">
+          <i data-lucide="user-check" class="w-4 h-4 text-emerald-600 mr-2"></i>
+          <select id="workerSelect" class="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer max-w-[150px] sm:max-w-[220px] truncate">
+            <!-- Dynamically Populated from DB -->
+          </select>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Always-visible language strip: browser select menus are often omitted from recordings. -->
+    <div class="language-recording-strip" aria-label="Training language selection">
+      <div class="language-strip-inner">
+        <span class="language-strip-label"><i data-lucide="languages"></i> TRAINING LANGUAGE</span>
+        <div class="language-chip-list" role="group" aria-label="Choose training language">
+          <button type="button" class="language-chip is-active" data-language-choice="hindi" aria-pressed="true">हिंदी <small>Hindi</small></button>
+          <button type="button" class="language-chip" data-language-choice="santhali" aria-pressed="false">ᱥᱟᱱᱛᱟᱲᱤ <small>Santhali</small></button>
+          <button type="button" class="language-chip" data-language-choice="mundari" aria-pressed="false">मुंडारी <small>Mundari</small></button>
+          <button type="button" class="language-chip" data-language-choice="bengali" aria-pressed="false">বাংলা <small>Bengali</small></button>
+          <button type="button" class="language-chip" data-language-choice="english" aria-pressed="false">English</button>
+        </div>
+        <span id="languageAudioMode" class="language-audio-mode">AUDIO READY</span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-7xl mx-auto px-4 flex items-center gap-2 overflow-x-auto py-2.5 border-t border-slate-200/80 scrollbar-none">
+      <button data-tab="training" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-amber-500 text-white flex items-center gap-2 shadow-md shadow-amber-500/25 whitespace-nowrap">
+        <i data-lucide="layers" class="w-4 h-4"></i> <span data-i18n="tabTraining">AR सुरक्षा प्रशिक्षण</span>
+      </button>
+      <button data-tab="mentor" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white/80 border border-slate-200 hover:bg-white transition-all flex items-center gap-2 whitespace-nowrap">
+        <i data-lucide="bot" class="w-4 h-4 text-amber-600"></i> <span data-i18n="tabMentor">AI सुरक्षा साथी</span>
+      </button>
+      <button data-tab="passport" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white/80 border border-slate-200 hover:bg-white transition-all flex items-center gap-2 whitespace-nowrap">
+        <i data-lucide="award" class="w-4 h-4 text-emerald-600"></i> <span data-i18n="tabPassport">DGMS डिजिटल पासपोर्ट</span>
+      </button>
+      <button data-tab="gate" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white/80 border border-slate-200 hover:bg-white transition-all flex items-center gap-2 whitespace-nowrap">
+        <i data-lucide="shield-check" class="w-4 h-4 text-cyan-600"></i> <span data-i18n="tabGate">गेट इंस्पेक्टर स्कैनर</span>
+      </button>
+      <button data-tab="admin" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white/80 border border-slate-200 hover:bg-white transition-all flex items-center gap-2 whitespace-nowrap">
+        <i data-lucide="layout-dashboard" class="w-4 h-4 text-indigo-600"></i> <span data-i18n="tabAdmin">DGMS धनबाद कमांड</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-5 space-y-5">
+
+    <section class="jh-hero" aria-label="Jharkhand mining safety training dashboard">
+      <div class="jh-hero-copy">
+        <div class="hero-kicker"><span class="live-pip"></span> JHARKHAND FIELD TRAINING NETWORK <span class="hero-coord">23.7957° N / 86.4304° E</span></div>
+        <h2>Train for the<br><em>unseen.</em></h2>
+        <p>Immersive safety drills for the people who keep the mines moving. Scan your space, spot the hazard, and practice the right response.</p>
+        <div class="hero-actions">
+          <button class="hero-cta" id="heroStartTraining" type="button"><i data-lucide="scan-eye"></i> Enter training floor <span>↗</span></button>
+          <div class="hero-status"><span class="status-ring"><i data-lucide="shield-check"></i></span><span><b id="cameraSupportStatus">CAMERA CHECK READY</b><small>Phone camera · no headset</small></span></div>
+        </div>
+      </div>
+      <div class="hero-landscape" aria-hidden="true">
+        <div class="land-orbit orbit-one"></div><div class="land-orbit orbit-two"></div>
+        <div class="land-sun"></div><div class="land-slope slope-back"></div><div class="land-slope slope-mid"></div><div class="land-slope slope-front"></div>
+        <div class="land-shaft"><span></span><span></span><span></span><i></i></div>
+        <div class="land-label label-dhanbad"><b>DHANBAD</b><small>JHARKHAND · INDIA</small></div>
+        <div class="land-pin"><i></i></div>
+        <div class="land-grid"></div><div class="land-glow"></div>
+      </div>
+      <div class="hero-index"><span>01 — 05</span><span>SAFETY DOMAINS</span><span class="index-line"></span><span>SWIPE TO EXPLORE</span></div>
+    </section>
+    
+    <!-- Worker Profile Header -->
+    <div id="workerProfileHeader"></div>
+
+    <!-- ============================================================= -->
+    <!-- TAB 1: AR VOCATIONAL TRAINING SIMULATOR -->
+    <!-- ============================================================= -->
+    <section id="tabContent-training" class="tab-content space-y-4">
+      
+      <!-- Module Selector Cards -->
+      <div class="module-rail">
+        
+        <button data-module="roof_strata" class="glass-panel p-3.5 border-amber-500 bg-amber-50/80 text-amber-800 text-left transition-all hover:border-amber-600 shadow-md flex flex-col justify-between group">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-2xl group-hover:scale-110 transition-transform">⛏️</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-200 text-amber-900 font-bold font-tech">MOD 1</span>
+          </div>
+          <div>
+            <div class="text-xs font-extrabold text-slate-900 leading-tight">Roof Strata & Sounding</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">छत सुरक्षा व साउंडिंग</div>
+          </div>
+        </button>
+
+        <button data-module="gas_detector" class="glass-panel p-3.5 border-slate-200 bg-white text-slate-700 text-left transition-all hover:border-amber-500 flex flex-col justify-between group">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-2xl group-hover:scale-110 transition-transform">⚠️</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold font-tech">MOD 2</span>
+          </div>
+          <div>
+            <div class="text-xs font-extrabold text-slate-900 leading-tight">Multi-Gas & Methane</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">मल्टी-गैस व मीथेन</div>
+          </div>
+        </button>
+
+        <button data-module="loto_drill" class="glass-panel p-3.5 border-slate-200 bg-white text-slate-700 text-left transition-all hover:border-amber-500 flex flex-col justify-between group">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-2xl group-hover:scale-110 transition-transform">🔒</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold font-tech">MOD 3</span>
+          </div>
+          <div>
+            <div class="text-xs font-extrabold text-slate-900 leading-tight">Conveyor LOTO Protocol</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">कन्वेयर बेल्ट तालाबंदी</div>
+          </div>
+        </button>
+
+        <button data-module="dumper_blindspot" class="glass-panel p-3.5 border-slate-200 bg-white text-slate-700 text-left transition-all hover:border-amber-500 flex flex-col justify-between group">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-2xl group-hover:scale-110 transition-transform">🚛</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold font-tech">MOD 4</span>
+          </div>
+          <div>
+            <div class="text-xs font-extrabold text-slate-900 leading-tight">100T Dumper Blind Spot</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">डंपर अंधा क्षेत्र व हॉर्न</div>
+          </div>
+        </button>
+
+        <button data-module="scsr_donning" class="glass-panel p-3.5 border-slate-200 bg-white text-slate-700 text-left transition-all hover:border-amber-500 flex flex-col justify-between group">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-2xl group-hover:scale-110 transition-transform">🦺</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold font-tech">MOD 5</span>
+          </div>
+          <div>
+            <div class="text-xs font-extrabold text-slate-900 leading-tight">SCSR 60s Escape Drill</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">आपातकालीन रेस्क्यूर</div>
+          </div>
+        </button>
+
+      </div>
+
+      <!-- AR Viewport & Control Layout -->
+      <div class="training-stage grid grid-cols-1 lg:grid-cols-3 gap-5">
+        
+        <!-- Main 3D / WebAR Viewport -->
+        <div class="lg:col-span-2 ar-container relative">
+          <video id="cameraVideo" autoplay playsinline muted style="display: none;"></video>
+          <canvas id="arCanvas"></canvas>
+
+          <!-- Tactical HUD Layer -->
+          <div class="ar-overlay-hud">
+            <div class="ar-scanline"></div>
+            <div class="ar-corner ar-corner-tl"></div>
+            <div class="ar-corner ar-corner-tr"></div>
+            <div class="ar-corner ar-corner-bl"></div>
+            <div class="ar-corner ar-corner-br"></div>
+
+            <!-- Top Viewport Control Bar -->
+            <div class="absolute top-4 left-4 right-4 flex flex-wrap justify-between items-center gap-2 pointer-events-auto">
+              
+              <!-- Telemetry Badge & Compass -->
+              <div class="flex items-center gap-2 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 text-xs font-tech text-amber-400">
+                <div class="compass-ring flex items-center justify-center text-[10px] text-cyan-400 font-bold">
+                  N
+                </div>
+                <div>
+                  <div id="spatialTrackingBadge" class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span class="text-slate-100">3D MINE SANDBOX</span>
+                  </div>
+                <div class="text-[9px] text-slate-400 font-mono-code">CAMERA OVERLAY • TAP OBJECTS • SANDBOX FALLBACK</div>
+                </div>
+              </div>
+
+              <!-- Vision Filters & Snapshot Buttons -->
+              <div class="flex items-center gap-1.5 bg-slate-900/90 backdrop-blur-md p-1 rounded-xl border border-slate-700">
+                <button data-vision-mode="normal" class="px-2 py-1 rounded-lg text-[11px] font-bold bg-amber-500/30 text-amber-300 border border-amber-500/50" title="Standard Headlamp">
+                  💡 Normal
+                </button>
+                <button data-vision-mode="thermal" class="px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:text-white" title="Thermal Gas Vision">
+                  🌡️ Thermal
+                </button>
+                <button data-vision-mode="night" class="px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:text-white" title="Tactical Night Vision">
+                  🟢 Night
+                </button>
+                <button data-vision-mode="xray" class="px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:text-white" title="X-Ray Strata">
+                  ⚡ X-Ray
+                </button>
+                <button id="btnTakeSnapshot" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-cyan-500/30 text-cyan-300 border border-cyan-500/50 hover:bg-cyan-500/40 flex items-center gap-1" title="Capture Evidence Snapshot">
+                  <i data-lucide="camera" class="w-3.5 h-3.5"></i> Snap
+                </button>
+              </div>
+
+              <!-- Camera WebAR Toggle Button -->
+              <button id="btnToggleAR" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500 text-white flex items-center hover:bg-amber-600 transition-all shadow-md">
+                <i data-lucide="camera" class="w-4 h-4 mr-1.5"></i> Camera overlay practice
+              </button>
+
+            </div>
+
+            <!-- Suraksha Sathi Live Voice Bubble in 3D Space -->
+            <div id="mentorLiveBubble" class="hidden absolute bottom-5 left-5 right-5 bg-white/95 border border-amber-400 backdrop-blur-xl p-3.5 rounded-2xl text-xs text-slate-900 shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-300">
+              <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-400 flex items-center justify-center text-white font-extrabold text-xs flex-shrink-0 shadow-md">
+                साथी
+              </div>
+              <div class="flex-1 font-semibold leading-snug"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-Time Drill Guidance Panel -->
+        <div class="glass-panel p-5 flex flex-col justify-between space-y-4">
+          
+          <div>
+            <!-- Header & Step Progress -->
+            <div class="flex items-center justify-between mb-3">
+              <div class="text-xs font-extrabold text-amber-700 uppercase tracking-widest font-tech flex items-center gap-1.5">
+                <i data-lucide="shield-check" class="w-4 h-4 text-amber-600"></i> DGMS STANDARD DRILL
+              </div>
+              <span id="drillProgressText" class="text-xs font-extrabold text-emerald-700 font-tech">0% Complete</span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden mb-4 p-0.5 border border-slate-300">
+              <div id="drillProgressBar" class="bg-gradient-to-r from-amber-500 via-emerald-500 to-cyan-500 h-full rounded-full transition-all duration-300 shadow-sm" style="width: 0%"></div>
+            </div>
+
+            <!-- Step Instruction Card with Voice Narration Button -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 mb-4 shadow-sm space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="text-[10px] text-slate-500 uppercase font-tech tracking-wider flex items-center gap-1">
+                  <i data-lucide="info" class="w-3.5 h-3.5 text-amber-600"></i> कार्य निर्देश (STEP INSTRUCTION):
+                </div>
+                <!-- 🔊 Icon-First Voice Narration Trigger for Low-Literacy Recruits -->
+                <button id="btnListenStepAudio" class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold flex items-center gap-1 shadow-sm transition-all" title="Listen Spoken Instruction in Hindi/Santhali">
+                  <i data-lucide="volume-2" class="w-3.5 h-3.5"></i> <span data-i18n="listenBtn">🔊 ऑडियो सुनें</span>
+                </button>
+              </div>
+              <div id="drillInstructionText" class="text-sm font-bold text-slate-900 leading-snug">
+                छत के 6 स्थानों पर साउंडिंग रॉड से टैप करें और ध्वनि की खनक जांचें।
+              </div>
+              <div id="drillInteractionHint" class="hidden text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2"></div>
+              <div id="speechLanguageStatus" class="hidden text-[11px] text-amber-800"></div>
+            </div>
+
+            <!-- Acoustic Waveform Oscilloscope Container -->
+            <div id="oscilloscopeContainer" class="p-3.5 bg-slate-900 rounded-2xl border border-cyan-500/40 mb-4 space-y-2">
+              <div class="flex items-center justify-between text-[11px] font-tech text-cyan-300 font-bold">
+                <span class="flex items-center gap-1.5"><i data-lucide="activity" class="w-3.5 h-3.5"></i> ACOUSTIC STRATA OSCILLOSCOPE</span>
+                <span class="text-[10px] text-slate-400">Sine = Safe | Fractured = Hazard</span>
+              </div>
+              <canvas id="oscilloscopeCanvas" width="280" height="70" class="w-full oscilloscope-canvas"></canvas>
+            </div>
+
+            <!-- Dynamic Action Buttons -->
+            <div id="drillActionsContainer" class="flex flex-wrap gap-2.5 mb-3"></div>
+
+            <!-- Dynamic Quiz Container -->
+            <div id="drillQuizContainer" class="hidden mb-3"></div>
+          </div>
+
+          <!-- Suraksha Sathi Voice Coaching Mini-Bar -->
+          <div class="p-3.5 bg-gradient-to-br from-amber-50 via-white to-amber-50/30 rounded-2xl border border-amber-200 flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-700 text-xl avatar-halo">
+                👷
+              </div>
+              <div>
+                <div class="text-xs font-bold text-slate-900">सुरक्षा साथी (AI Mentor)</div>
+                <div class="text-[10px] text-amber-700 font-tech font-bold">VOICE GUIDANCE ACTIVE • HINDI/SANTHALI</div>
+              </div>
+            </div>
+
+            <div id="mentorVoiceWave" class="hidden flex items-center gap-1">
+              <div class="voice-wave-bar"></div>
+              <div class="voice-wave-bar"></div>
+              <div class="voice-wave-bar"></div>
+              <div class="voice-wave-bar"></div>
+              <div class="voice-wave-bar"></div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- TAB 2: AI VOICE MENTOR STUDIO -->
+    <!-- ============================================================= -->
+    <section id="tabContent-mentor" class="tab-content hidden space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        
+        <!-- Mentor Profile Card -->
+        <div class="glass-panel p-6 space-y-5 text-center">
+          <div>
+            <div class="w-24 h-24 rounded-3xl bg-gradient-to-tr from-amber-500 to-amber-300 p-1 mx-auto mb-3.5 shadow-xl shadow-amber-500/20">
+              <div class="w-full h-full bg-white rounded-[20px] flex items-center justify-center text-4xl">
+                👷
+              </div>
+            </div>
+            <h3 class="text-lg font-heading font-extrabold text-slate-900">सुरक्षा साथी (Suraksha Sathi)</h3>
+            <p class="text-xs text-amber-700 font-tech tracking-wider uppercase mt-0.5 font-bold">DGMS Certified AI Safety Mentor</p>
+            <p class="text-xs text-slate-600 mt-2.5 leading-relaxed font-medium">
+              झारखंड के जनजातीय एवं अनुबंध खनिकों के लिए समर्पित बहुभाषी आवाज-आधारित सुरक्षा मार्गदर्शक।
+            </p>
+          </div>
+
+          <div class="border-t border-slate-200 pt-4 space-y-2.5 text-xs text-left">
+            <div class="flex justify-between text-slate-500">
+              <span>Dialects Supported:</span>
+              <span class="text-slate-900 font-bold">Hindi, Santhali, Mundari, Bengali</span>
+            </div>
+            <div class="flex justify-between text-slate-500">
+              <span>Regulatory Baseline:</span>
+              <span class="text-amber-700 font-tech font-bold">Mines Act 1952 / CMR 2017</span>
+            </div>
+            <div class="flex justify-between text-slate-500">
+              <span>Interaction Mode:</span>
+              <span class="text-emerald-700 font-bold">Speech-to-Speech Vernacular</span>
+            </div>
+          </div>
+
+          <!-- Quick Vernacular Prompts -->
+          <div class="border-t border-slate-200 pt-4 text-left">
+            <div class="text-xs font-bold text-slate-800 mb-2.5 flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-4 h-4 text-amber-600"></i> मुख्य सुरक्षा प्रश्न (Quick Prompts):
+            </div>
+            <div class="space-y-2">
+              <button data-prompt-chip="रूफ साउंडिंग कैसे करें?" class="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-amber-500 hover:text-white text-xs text-slate-700 transition-all border border-slate-200 font-medium">
+                ⛏️ छत की साउंडिंग कैसे करें?
+              </button>
+              <button data-prompt-chip="मीथेन 1.25% से अधिक हो तो क्या करें?" class="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-amber-500 hover:text-white text-xs text-slate-700 transition-all border border-slate-200 font-medium">
+                ⚠️ मीथेन 1.25% होने पर क्या करें?
+              </button>
+              <button data-prompt-chip="LOTO के 6 नियम क्या हैं?" class="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-amber-500 hover:text-white text-xs text-slate-700 transition-all border border-slate-200 font-medium">
+                🔒 LOTO के 6 नियम क्या हैं?
+              </button>
+              <button data-prompt-chip="100 टन डंपर से कितनी दूरी रखें?" class="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-amber-500 hover:text-white text-xs text-slate-700 transition-all border border-slate-200 font-medium">
+                🚛 डंपर से दूरी व DGMS हॉर्न कोड?
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat & Voice Studio -->
+        <div class="md:col-span-2 glass-panel p-6 flex flex-col justify-between h-[580px]">
+          
+          <div id="mentorChatMessages" class="flex-1 overflow-y-auto space-y-3.5 pr-2 scrollbar-none">
+            <div class="flex gap-3">
+              <div class="w-8 h-8 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-700 font-bold text-xs flex-shrink-0">साथी</div>
+              <div class="max-w-[85%] p-3.5 rounded-2xl bg-white border border-slate-200 text-xs leading-relaxed text-slate-800 shadow-sm font-medium">
+                नमस्ते जोहार! मैं आपका <strong>सुरक्षा साथी</strong> हूँ। खदान या कारखाने में सुरक्षा नियमों, गैस जांच या प्राथमिक चिकित्सा से जुड़ा कोई भी सवाल अपनी भाषा में पूछें या माइक दबाकर बोलें।
+              </div>
+            </div>
+          </div>
+
+          <!-- Input Bar -->
+          <div class="pt-4 border-t border-slate-200 flex items-center gap-2.5">
+            <button id="btnVoiceMentorMic" class="p-3.5 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-400 text-white hover:from-amber-600 hover:to-amber-500 shadow-md shadow-amber-500/25 transition-all flex-shrink-0" title="माइक से बोलें (Voice Ask)">
+              <i data-lucide="mic" class="w-5 h-5"></i>
+            </button>
+            <input id="voiceMentorInput" type="text" placeholder="सुरक्षा प्रश्न पूछें (उदा: मीथेन की सीमा क्या है?)..." class="flex-1 bg-white border border-slate-300 rounded-2xl px-4 py-3 text-xs text-slate-900 outline-none focus:border-amber-500 transition-all shadow-inner">
+            <button id="btnVoiceMentorSend" class="p-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white flex items-center justify-center transition-all shadow-sm">
+              <i data-lucide="send" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- TAB 3: DGMS DIGITAL SAFETY PASSPORT -->
+    <!-- ============================================================= -->
+    <section id="tabContent-passport" class="tab-content hidden space-y-4">
+      <div id="passportCardContainer" class="max-w-4xl mx-auto"></div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- TAB 4: PITHEAD GATE INSPECTOR SCANNER -->
+    <!-- ============================================================= -->
+    <section id="tabContent-gate" class="tab-content hidden space-y-5 max-w-3xl mx-auto">
+      <div class="glass-panel p-6 sm:p-8 space-y-6">
+        
+        <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-700 text-xl shadow-inner">
+              <i data-lucide="scan" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-heading font-extrabold text-slate-900">Pithead Entry Gate QR Scanner</h3>
+              <p class="text-xs text-slate-500 font-tech">DGMS Dhanbad Verification Terminal</p>
+            </div>
+          </div>
+          <span class="px-3 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-full text-xs font-tech font-bold flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> GATE #2 ONLINE
+          </span>
+        </div>
+
+        <!-- Camera QR Scanner Area -->
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-bold text-slate-800">Scan Worker QR Pass via Camera or Enter Code:</label>
+            <button id="btnStartCameraQR" class="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs flex items-center shadow-sm">
+              <i data-lucide="camera" class="w-4 h-4 mr-1.5"></i> Start Camera QR Scan
+            </button>
+          </div>
+
+          <!-- Video QR Reader Box -->
+          <div id="cameraQrScannerContainer" class="hidden p-3 bg-slate-900 rounded-2xl border-2 border-cyan-500">
+            <div id="qrReaderVideo" class="w-full rounded-xl overflow-hidden"></div>
+          </div>
+
+          <div class="flex gap-2.5">
+            <input id="gateInputCode" type="text" placeholder="Scan QR or Enter Code (e.g. BCCL-JH-7821)..." value="BCCL-JH-7821" class="flex-1 bg-white border border-slate-300 rounded-2xl px-4 py-3 text-xs text-slate-900 outline-none focus:border-amber-500 font-tech shadow-inner">
+            <button id="btnGateVerify" class="px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-amber-500/25 btn-shimmer">
+              Verify Gate Pass
+            </button>
+          </div>
+
+          <div class="flex flex-wrap gap-2 pt-2">
+            <span class="text-xs text-slate-500 self-center">Demo Profiles:</span>
+            <button data-gate-code="BCCL-JH-7821" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs text-amber-800 border border-slate-300 font-tech font-medium">
+              Birsa Soren (12d High-Risk)
+            </button>
+            <button data-gate-code="TISCO-JH-4419" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs text-amber-800 border border-slate-300 font-tech font-medium">
+              Sunil Munda (8d High-Risk)
+            </button>
+            <button data-gate-code="CCL-JH-6671" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs text-emerald-800 border border-slate-300 font-tech font-medium">
+              Anita Murmu (Certified)
+            </button>
+          </div>
+        </div>
+
+        <div id="gateScanResult"></div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- TAB 5: DGMS DHANBAD COMMAND CENTER -->
+    <!-- ============================================================= -->
+    <section id="tabContent-admin" class="tab-content hidden space-y-5">
+      
+      <!-- Top 4 KPIs -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <div class="glass-panel p-5 border-slate-200">
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-xs text-slate-500 font-bold">Total Trained Recruits</span>
+            <i data-lucide="users" class="w-4 h-4 text-amber-600"></i>
+          </div>
+          <div id="statTotalWorkers" class="text-2xl font-extrabold text-slate-900 font-tech">0</div>
+          <div class="text-[11px] text-emerald-700 mt-1 font-tech font-bold">+100% WebAR Accessibility</div>
+        </div>
+
+        <div class="glass-panel p-5 border-red-200 bg-red-50/50">
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-xs text-red-700 font-bold">High-Risk Recruits (&lt;30d)</span>
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600"></i>
+          </div>
+          <div id="statHighRisk" class="text-2xl font-extrabold text-red-700 font-tech">0</div>
+          <div class="text-[11px] text-red-600 mt-1 font-medium">Priority Buddy Miner Protocol</div>
+        </div>
+
+        <div class="glass-panel p-5 border-slate-200">
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-xs text-slate-500 font-bold">Active DGMS Passports</span>
+            <i data-lucide="award" class="w-4 h-4 text-emerald-600"></i>
+          </div>
+          <div id="statCertified" class="text-2xl font-extrabold text-emerald-700 font-tech">0</div>
+          <div class="text-[11px] text-slate-500 mt-1 font-tech">SHA-256 Verified QR</div>
+        </div>
+
+        <div class="glass-panel p-5 border-slate-200">
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-xs text-slate-500 font-bold">Avg. Comprehension Index</span>
+            <i data-lucide="trending-up" class="w-4 h-4 text-amber-600"></i>
+          </div>
+          <div id="statSafetyIndex" class="text-2xl font-extrabold text-amber-700 font-tech">0.0%</div>
+          <div class="text-[11px] text-emerald-700 mt-1 font-tech font-bold">Retention: 94.2% (vs 20% Static)</div>
+        </div>
+
+      </div>
+
+      <!-- Live Simulated SCADA Gas Feed Grid -->
+      <div id="commandCenterGasTelemetry" class="w-full"></div>
+
+      <!-- District Table & Recruits Watchlist -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        
+        <div class="lg:col-span-2 glass-panel p-6 space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="map-pin" class="w-4 h-4 text-amber-600"></i>
+              Jharkhand Mining District Safety Readiness Index
+            </h3>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-600 font-tech">Form B Standard</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-700 font-tech border-b border-slate-200">
+                <tr>
+                  <th class="py-3 px-4">District (खदान क्षेत्र)</th>
+                  <th class="py-3 px-4">Recruits</th>
+                  <th class="py-3 px-4">High Risk (&lt;30d)</th>
+                  <th class="py-3 px-4">Avg Score</th>
+                  <th class="py-3 px-4">DGMS Tier</th>
+                </tr>
+              </thead>
+              <tbody id="districtStatsTable" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="glass-panel p-6 space-y-4 border-red-200">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-red-700 flex items-center gap-2">
+              <i data-lucide="shield-alert" class="w-4 h-4 text-red-600"></i> &lt;30 Days Watchlist
+            </h3>
+            <span class="text-[10px] bg-red-100 text-red-800 px-2.5 py-0.5 rounded-full font-bold font-tech">MANDATORY</span>
+          </div>
+          <div id="highRiskRecruitsList" class="space-y-2.5 max-h-[350px] overflow-y-auto pr-1"></div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Drill Success / Pass Modal -->
+  <div id="drillSuccessModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel border-2 border-amber-500 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200 bg-white">
+      
+      <div class="text-center space-y-2">
+        <div class="w-20 h-20 rounded-3xl bg-emerald-100 border-2 border-emerald-400 mx-auto flex items-center justify-center text-4xl shadow-xl shadow-emerald-500/20">
+          🏆
+        </div>
+        <h3 id="drillModalTitle" class="text-xl font-heading font-extrabold text-slate-900">Vocational Drill Passed!</h3>
+        <p class="text-xs text-amber-700 font-tech tracking-wider uppercase font-bold">DGMS Competency Assessment Verified</p>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center">
+        <div>
+          <div class="text-[10px] text-slate-500 font-tech font-bold">SCORE</div>
+          <div id="drillModalScore" class="text-base font-extrabold text-emerald-700 font-tech">95%</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-slate-500 font-tech font-bold">REACTION</div>
+          <div id="drillModalReaction" class="text-base font-extrabold text-amber-700 font-tech">1.4s</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-slate-500 font-tech font-bold">COMPREHENSION</div>
+          <div id="drillModalCompIndex" class="text-base font-extrabold text-emerald-700 font-tech">96.2%</div>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="closeDrillSuccessModal()" class="flex-1 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all border border-slate-200">
+          Continue Drills
+        </button>
+        <button onclick="closeDrillSuccessModal(); document.querySelector('[data-tab=\'passport\']').click();" class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs shadow-md shadow-amber-500/25 btn-shimmer">
+          View Passport &rarr;
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-3.5 text-center text-xs text-slate-500 font-tech">
+    Khanan Suraksha Sathi • Department of Higher & Technical Education, Govt. of Jharkhand • DGMS Dhanbad Compliance
+  </footer>
+
+  <!-- Scripts -->
+  <script src="./js/ar-engine.js?v=38"></script>
+  <script src="./js/suraksha-sathi.js?v=38"></script>
+  <script src="./js/modules/roof-strata.js?v=38"></script>
+  <script src="./js/modules/gas-detector.js?v=38"></script>
+  <script src="./js/modules/loto-drill.js?v=38"></script>
+  <script src="./js/modules/dumper-blindspot.js?v=38"></script>
+  <script src="./js/modules/scsr-donning.js?v=38"></script>
+  <script src="./js/app.js?v=38"></script>
+  <script>
+    lucide.createIcons();
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js?v=38', { updateViaCache: 'none' }).catch(console.warn));
+    }
+  </script>
+</body>
+</html>

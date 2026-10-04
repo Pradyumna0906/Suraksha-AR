@@ -1,0 +1,12 @@
+{
+  "name": "Khanan Suraksha Sathi",
+  "short_name": "Suraksha Sathi",
+  "description": "Mobile safety training with camera-assisted AR and offline drills",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#10251d",
+  "theme_color": "#10251d",
+  "orientation": "portrait",
+  "icons": [{ "src": "/icons/mining-safety.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
