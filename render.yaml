@@ -1,0 +1,30 @@
+services:
+  # FastAPI service. It also serves the desktop-web static interface.
+  - type: web
+    name: suraksha-desktop-api
+    runtime: python
+    plan: free
+    rootDir: desktop-web
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    buildFilter:
+      paths:
+        - desktop-web/**
+        - render.yaml
+
+  # React/Vite browser build for SurakshaAR.
+  - type: web
+    name: suraksha-mobile-web
+    runtime: static
+    rootDir: mobile-app
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    buildFilter:
+      paths:
+        - mobile-app/**
+        - render.yaml
